@@ -1,0 +1,50 @@
+commit 47439d04aaeef9045015bda90eac804865723929
+Author: Jimmy Wennlund <jimmy@wennlund.nu>
+Date:   Wed Oct 18 23:05:51 2023 +0200
+
+    Add DS peripheral support in esp_http_client
+
+diff --git a/components/esp-tls/esp_tls_mbedtls.c b/components/esp-tls/esp_tls_mbedtls.c
+index 79921f0c36..8f382873dd 100644
+--- a/components/esp-tls/esp_tls_mbedtls.c
++++ b/components/esp-tls/esp_tls_mbedtls.c
+@@ -764,6 +764,7 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t
+             ESP_LOGE(TAG, "Failed to set client pki context for the DS peripheral, returned [0x%04X] (%s)", ret, esp_err_to_name(esp_ret));
+             return esp_ret;
+         }
++        ESP_LOGD(TAG, "DS peripheral is used for the TLS handshake");
+ #else
+         ESP_LOGE(TAG, "Please enable the DS peripheral support for the ESP-TLS in menuconfig. (only supported for the ESP32-S2 chip)");
+         return ESP_FAIL;
+diff --git a/components/esp_http_client/esp_http_client.c b/components/esp_http_client/esp_http_client.c
+index 59273915ec..d5126367ea 100644
+--- a/components/esp_http_client/esp_http_client.c
++++ b/components/esp_http_client/esp_http_client.c
+@@ -708,6 +708,12 @@ esp_http_client_handle_t esp_http_client_init(const esp_http_client_config_t *co
+         }
+     }
+ 
++#ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
++    if (config->ds_data) {
++        esp_transport_ssl_set_ds_data(ssl, config->ds_data);
++    }
++#endif
++
+     if (config->client_cert_pem) {
+         if (!config->client_cert_len) {
+             esp_transport_ssl_set_client_cert_data(ssl, config->client_cert_pem, strlen(config->client_cert_pem));
+diff --git a/components/esp_http_client/include/esp_http_client.h b/components/esp_http_client/include/esp_http_client.h
+index e1dbd5c8f1..98504c0413 100644
+--- a/components/esp_http_client/include/esp_http_client.h
++++ b/components/esp_http_client/include/esp_http_client.h
+@@ -157,6 +157,10 @@ typedef struct {
+     int                         keep_alive_interval; /*!< Keep-alive interval time. Default is 5 (second) */
+     int                         keep_alive_count;    /*!< Keep-alive packet retry send count. Default is 3 counts */
+     struct ifreq                *if_name;            /*!< The name of interface for data to go through. Use the default interface without setting */
++#ifdef CONFIG_ESP_TLS_USE_DS_PERIPHERAL
++    void                        *ds_data;            /*!< Carrier of handle for digital signature parameters, digital signature peripheral is
++                                                          available in some Espressif devices. */
++#endif
+ #if CONFIG_ESP_TLS_USE_SECURE_ELEMENT
+     bool use_secure_element;                /*!< Enable this option to use secure element */
+ #endif

@@ -43,6 +43,8 @@ static const char *TAG = "DS_HTTPS_EXAMPLE";
 #define MAX_HTTP_RECV_BUFFER 512
 #define MAX_HTTP_OUTPUT_BUFFER 2048
 
+extern const uint8_t server_cert_pem_start[] asm("_binary_server_cert_pem_start");
+extern const uint8_t server_cert_pem_end[] asm("_binary_server_cert_pem_end");
 
 
 esp_err_t _http_event_handler(esp_http_client_event_t *evt)
@@ -155,10 +157,16 @@ static void https_with_url(void)
         return;
     }
 
+    ESP_LOGI(TAG, "Server cert: '%s'", server_cert_pem_start);
+    ESP_LOGI(TAG, "Deivce cert: '%s'", device_cert);
+
     esp_http_client_config_t config = {
-        .url = "https://www.howsmyssl.com",
+        .url = "https://192.168.1.6:9999/authenticate",
         .event_handler = _http_event_handler,
-        .crt_bundle_attach = esp_crt_bundle_attach,
+        //.crt_bundle_attach = esp_crt_bundle_attach,
+        .cert_pem = (char *)server_cert_pem_start,
+        //.skip_cert_common_name_check = true,
+        .common_name = "localhost",
         .client_cert_pem = device_cert,
         .client_cert_len = len,
         .ds_data = (void *)ds_data,

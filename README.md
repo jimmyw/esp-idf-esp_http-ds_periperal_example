@@ -43,7 +43,7 @@ openssl genrsa -out client.key
 
 3) Generate device cert:
 ```
-openssl req -out client.csr -key client.key -new
+openssl req -out client.csr -key client.key -new -subj "/C=SE/ST=Stockholm/L=Stockholm/O=Your Company, Inc./OU=SE/CN=TB1"
 openssl x509 -req -days 365 -in client.csr -CA cacert.pem -CAkey prvtkey.pem  -sha256 -CAcreateserial -out client.crt
 ```
 
